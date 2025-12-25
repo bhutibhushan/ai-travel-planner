@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'users',
     'trips',
     'ai_engine',
+    'common',
 ]
 
 MIDDLEWARE = [
@@ -42,6 +43,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'common.auth_middleware.FirebaseAuthenticationMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
