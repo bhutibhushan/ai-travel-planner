@@ -1,3 +1,4 @@
+from bson import ObjectId
 from common.db import users_collection
 from datetime import datetime
 
@@ -18,5 +19,7 @@ def get_or_create_user(firebase_user):
         "created_at": datetime.utcnow(),
     }
 
-    collection.insert_one(new_user)
+    result = collection.insert_one(new_user)
+    new_user["_id"] = result.inserted_id
+
     return new_user
