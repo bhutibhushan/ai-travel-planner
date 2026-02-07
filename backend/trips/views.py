@@ -4,6 +4,7 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from users.services import get_or_create_user
 from .services import create_trip,get_user_trips
+from ai_engine.trip_generator import generate_trip_itinerary
 
 def health_check(request):
     return JsonResponse({
@@ -54,3 +55,47 @@ def list_trips_view(request):
 
     return JsonResponse({"trips": serialized_trips})
 
+@csrf_exempt
+def generate_ai_trip_view(request):
+    if not request.firebase_user:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+
+    try:
+        user = get_or_create_user(request.firebase_user)
+        data = json.loads(request.body)
+
+        destination = data.get("destination")
+        days = data.get("days")
+        budget = data.get("budget")
+        preferences = data.get("preferences", [])
+
+        ai_response = generate_trip_itinerary(
+            destination,
+            days,
+            budget,
+            preferences
+        )
+
+        cleaned = ai_response.strip()
+
+        if cleaned.startswith("```"):
+            cleaned = cleaned.replace("```json", "")
+            cleaned = cleaned.replace("```", "")
+            cleaned = cleaned.strip()
+
+        itinerary = json.loads(cleaned)
+
+        # 🔥 THIS WAS MISSING
+        create_trip(user["_id"], itinerary)
+
+        return JsonResponse({
+            "message": "AI trip generated successfully",
+            "itinerary": itinerary
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "error": "AI_GENERATION_ERROR",
+            "type": type(e).__name__,
+            "message": str(e)
+        }, status=500)
