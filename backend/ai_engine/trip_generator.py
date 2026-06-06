@@ -1,5 +1,6 @@
 import google.generativeai as genai
 import os
+from .fallback import fallback_itinerary
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -26,5 +27,14 @@ def generate_trip_itinerary(destination, days, budget, preferences):
     }}
     """
 
-    response = model.generate_content(prompt)
-    return response.text
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+
+    except Exception:
+        return fallback_itinerary(
+            destination,
+            days,
+            budget,
+            preferences
+        )
