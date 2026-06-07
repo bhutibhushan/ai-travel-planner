@@ -8,4 +8,4 @@ urlpatterns=[
     path('list/',list_trips_view),
     path('generate/', generate_ai_trip_view),
     path('replan/',replan_trip_view),
-]
+]   
