@@ -1,5 +1,6 @@
 from common.db import trips_collection
 from datetime import datetime
+from bson import ObjectId
 
 
 def create_trip(user_id, trip_data):
@@ -23,3 +24,12 @@ def create_trip(user_id, trip_data):
 def get_user_trips(user_id):
     collection = trips_collection()
     return list(collection.find())
+
+def get_trip_by_id(trip_id):
+    collection = trips_collection()
+    
+    trip = collection.find_one({
+        "_id": ObjectId(trip_id)
+    })
+    return trip
+    

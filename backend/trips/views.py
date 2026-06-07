@@ -6,7 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 from users.services import get_or_create_user
 from .services import create_trip, get_user_trips
 from ai_engine.trip_generator import generate_trip_itinerary
-
+from ai_engine.adaptation import adapt_trip_itinerary
+from .services import get_trip_by_id
 
 def health_check(request):
     return JsonResponse({
@@ -119,6 +120,54 @@ def generate_ai_trip_view(request):
     except Exception as e:
         return JsonResponse({
             "error": "AI_GENERATION_ERROR",
+            "type": type(e).__name__,
+            "message": str(e)
+        }, status=500)
+
+@csrf_exempt
+def replan_trip_view(request):
+    if not request.firebase_user:
+        return JsonResponse(
+            {"error": "Authentication required"},
+            status=401
+        )
+    try:
+        data = json.loads(request.body)
+
+        trip_id = data.get("trip_id")
+        current_day = data.get("current_day")
+        situation = data.get("situation")
+
+        trip = get_trip_by_id(trip_id)
+
+        if not trip:
+            return JsonResponse(
+                {"error": "Trip not found"},
+                status=404
+            )
+        adapted_response = adapt_trip_itinerary(
+            trip.get("trip"),
+            current_day,
+            situation
+        )
+
+        cleaned = adapted_response.strip()
+
+        if cleaned.startswith("```"):
+            cleaned = cleaned.replace("```json","")
+            cleaned = cleaned.replace("```","")
+            cleaned = cleaned.strip()
+
+        adapted_plan = json.loads(cleaned)
+
+        return JsonResponse({
+            "message": "Trip adapted successfully",
+            "adapted_plan": adapted_plan
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "error": "TRIP_ADAPTATION_ERROR",
             "type": type(e).__name__,
             "message": str(e)
         }, status=500)
